@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Test{% endblock %}	
+
+{% block page_content %}
+<div class="page-header">
+    <h1>ButLed <span class="glyphicon glyphicon-flash" style='font-size: 50px'></span></h1>
+</div>
+<div class = "container">
+	<div class = "row">
+        <div id="RasPi">
+            <h3>Board: {{board}}</h3>
+			<p>LED <img id="ledR" onclick="changeLed(this.id)" src="{{ url_for('static', filename='imgs/butoff.png') }}" width="96" height="50">
+			<p>Button: <img id="imgBut" src="{{ url_for('static', filename='imgs/ledoff.png') }}" width="60" height="50"></p>
+        </div>	
+		<div class = "col-md-5" id = "log_space">
+			<div class="panel panel-default">
+    			<div class="panel-heading clearfix">
+    				<b>Log</b>
+    			    <div class="pull-right">
+            			<a href="#" class="btn btn-xs btn-primary">Clear</a>
+        			</div>
+    			</div>
+    			<div class="panel-body">
+    				<textarea id="log" class="form-control" rows="15"></textarea>
+    			</div>
+			</div>			
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+
+	<script type="text/javascript" charset="utf-8">
+		namespace = '/test'; // change to an empty string to use the global namespace
+		var url = 'http://' + document.domain + ':' + location.port + namespace;
+		var socket = io.connect(url);
+	
+		var obj=document.getElementById('log');
+		function log(msg) {
+			$('#log').append('\n' +msg);
+			obj.scrollTop=obj.scrollHeight;
+		}
+
+		function changeLed(id) {
+			var element = document.getElementById(id);
+			var state = element.src.match('off') != null;
+			if (state)
+				element.src="{{ url_for('static', filename='imgs/buton.png') }}"; 
+			else
+				element.src="{{ url_for('static', filename='imgs/butoff.png') }}";
+			log(state ? 'LED ON' : 'LED OFF');
+			socket.emit(id + 'Ctrl', {led: state});
+		} 
+        
+        $(document).ready(function(){
+			$('#log').append(url);	
+
+		    var image = document.getElementById('imgBut');
+			socket.on('but', function(msg) {
+				but = msg.state ? "Button ON" : "Button OFF";
+				log(but);
+			    if (msg.state)
+			        image.src = "{{ url_for('static', filename='imgs/ledon.png') }}";
+			    else
+			        image.src = "{{ url_for('static', filename='imgs/ledoff.png') }}";
+			});			
+		});
+	</script>	
+{% endblock %}
